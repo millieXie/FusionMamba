@@ -484,21 +484,6 @@ class SS2D(nn.Module):
             out = self.dropout(out)
         return out
 
-
-class DenseBlock(nn.Module):
-    def __init__(self, channels):
-        super(DenseBlock, self).__init__()
-        self.conv1 = ConvLeakyRelu2d(channels, channels)
-        self.conv2 = ConvLeakyRelu2d(2 * channels, channels)
-        # self.conv3 = ConvLeakyRelu2d(3*channels, channels)
-
-    def forward(self, x):
-        x = torch.cat((x, self.conv1(x)), dim=1)
-        x = torch.cat((x, self.conv2(x)), dim=1)
-        # x = torch.cat((x, self.conv3(x)), dim=1)
-        return x
-
-
 class ConvLeakyRelu2d(nn.Module):
     # convolution
     # leaky relu
@@ -541,22 +526,6 @@ class Sobelxy(nn.Module):
         sobely = self.convy(x)
         x = torch.abs(sobelx) + torch.abs(sobely)
         return x
-
-
-class Grad(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super(Grad, self).__init__()
-        self.dense = DenseBlock(in_channels)
-        self.convdown = Conv1(3 * in_channels, in_channels)
-        self.sobelconv = Sobelxy(in_channels)
-        self.convup = Conv1(in_channels, out_channels)
-
-    def forward(self, x):
-        x1 = self.dense(x)
-        x1 = self.convdown(x1)
-        x2 = self.sobelconv(x)
-        x2 = self.convup(x2)
-        return F.leaky_relu(x1 + x2, negative_slope=0.1)
 
 
 class Conv2d_Hori_Veri_Cross(nn.Module):
