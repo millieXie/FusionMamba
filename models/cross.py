@@ -957,8 +957,8 @@ class VSSBlock_Cross_new(nn.Module):
         Cross_x1x2_eca =  self.self_attention_cross_eca(Cross_x1x2_) #(b, c, h, w)
         Cross_x1x2_eca = Cross_x1x2_eca.permute(0, 2, 3, 1)
         x = input2 + input1 + Cross_x1x2 + Cross_x1x2_eca
-        if self.mlp_branch:
-            x = x + self.drop_path(self.mlp(self.norm2(x)))  # FFN
+        # if self.mlp_branch:
+        #     x = x + self.drop_path(self.mlp(self.norm2(x)))  # FFN
         return x
 
 class VSSBlock_new(nn.Module):
