@@ -1,89 +1,91 @@
-import os
-import argparse
-import torch
+import cv2
 import numpy as np
-from torch.utils.data import DataLoader
-from torch.autograd import Variable
+import os
+import torch
+import time
+import torchvision.transforms as transforms
+from models import VSSM_Fusion as net
 from PIL import Image
-from TaskFusion_dataset import Fusion_dataset
-from models.vmunet.vmamba_Fusion_efficross import VSSM_Fusion as net
 
-def main():
-    fusion_model_path = 'modelpath.pth'
-    fusionmodel = net(output=1)
-    device = torch.device("cuda:{}".format(args.gpu) if torch.cuda.is_available() else "cpu")
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+model = net(in_channel=1)
+model_path = "./model_last/my_cross/CTMRI11001.pth"
+use_gpu = torch.cuda.is_available()
+
+if use_gpu:
+    model = model.to(device)
+    model.load_state_dict(torch.load(model_path))
+else:
+    state_dict = torch.load(model_path, map_location='cpu')
+    model.load_state_dict(state_dict)
+
+
+def imresize(image, size, interp='bilinear'):
+    interp_methods = {
+        'nearest': cv2.INTER_NEAREST,
+        'bilinear': cv2.INTER_LINEAR,
+        'bicubic': cv2.INTER_CUBIC,
+        'lanczos': cv2.INTER_LANCZOS4
+    }
+    resized_image = cv2.resize(image, (size[1], size[0]), interpolation=interp_methods.get(interp, cv2.INTER_LINEAR))
+    return resized_image
+
+def fusion(input_folder_ir, input_folder_vis, output_folder):
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    tic = time.time()
+
+
+    ir_images = sorted([f for f in os.listdir(input_folder_ir) if f.endswith('.png')])
+    vis_images = sorted([f for f in os.listdir(input_folder_vis) if f.endswith('.png')])
+
+    for ir_image, vis_image in zip(ir_images, vis_images):
+        path1 = os.path.join(input_folder_ir, ir_image)
+        path2 = os.path.join(input_folder_vis, vis_image)
+
+ 
+        img1 = cv2.imread(path1, 0)
+        img2 = cv2.imread(path2, 0)
+
+   
+        img1 = np.asarray(Image.fromarray(img1), dtype=np.float32) / 255.0
+        img2 = np.asarray(Image.fromarray(img2), dtype=np.float32) / 255.0
+
     
-    if args.gpu >= 0:
-        fusionmodel.to(device)
+        img1 = np.expand_dims(img1, axis=0)
+        img2 = np.expand_dims(img2, axis=0)
+
+        img1_tensor = torch.from_numpy(img1).unsqueeze(0).to(device)
+        img2_tensor = torch.from_numpy(img2).unsqueeze(0).to(device)
+
+        model.eval()
+        with torch.no_grad():
+            out = model(img1_tensor, img2_tensor)
+         
+            out_np = out.cpu().numpy()
     
-    fusionmodel.load_state_dict(torch.load(fusion_model_path))
-    print('Fusion model loaded successfully!')
+            out_np = (out_np - np.min(out_np)) / (np.max(out_np) - np.min(out_np))
 
-    ir_path = 'path1'
-    vi_path = 'path2'
     
-    test_dataset = Fusion_dataset('test', ir_path=ir_path, vi_path=vi_path, length=21)
-    test_loader = DataLoader(
-        dataset=test_dataset,
-        batch_size=args.batch_size,
-        shuffle=False,
-        num_workers=args.num_workers,
-        pin_memory=True,
-        drop_last=False,
-    )
+        d = np.squeeze(out_np)
+        result = (d * 255).astype(np.uint8)
 
-    with torch.no_grad():
-        for it, (images_vis, images_ir, name) in enumerate(test_loader):
-            images_vis = Variable(images_vis)
-            images_ir = Variable(images_ir)
+        output_path = os.path.join(output_folder, ir_image)
+        cv2.imwrite(output_path, result)
 
-            if args.gpu >= 0:
-                images_vis = images_vis.to(device)
-                images_ir = images_ir.to(device)
+    toc = time.time()
+    print('Processing time: {}'.format(toc - tic))
 
-            image_vis_ycrcb = images_vis[:, 0:1, :, :]
 
-            fusion_image = fusionmodel(image_vis_ycrcb, images_ir)
-            fusion_image = torch.clamp(fusion_image, 0, 1)  
 
-            fused_image = fusion_image.cpu().numpy()
-            fused_image = fused_image.transpose((0, 2, 3, 1))  
-
-            print(f"Shape of fused_image: {fused_image.shape}")
-
-            fused_image = (fused_image - np.min(fused_image)) / (np.max(fused_image) - np.min(fused_image))
-            fused_image = np.uint8(255.0 * fused_image)
-
-            for k in range(len(name)):
-                image = fused_image[k, :, :, :]
-            
-                print(f"Shape of image[{k}]: {image.shape}")
-                
-          
-                if image.shape[-1] == 1:
-                    image = np.squeeze(image, axis=-1)
-                
-                print(f"Shape of image before conversion: {image.shape}")
-
-                try:
-                    image = Image.fromarray(image)
-                except TypeError as e:
-                    print(f"Error converting image: {e}")
-                    continue
-
-                save_path = os.path.join(fused_dir, name[k])
-                image.save(save_path)
-                print(f'Fusion {save_path} successfully!')
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Run MyFusion with pytorch')
-    parser.add_argument('--model_name', '-M', type=str, default='net')
-    parser.add_argument('--batch_size', '-B', type=int, default=1)
-    parser.add_argument('--gpu', '-G', type=int, default=0)
-    parser.add_argument('--num_workers', '-j', type=int, default=1)
-    args = parser.parse_args()
+    input_folder_1 = '/path1'
+    input_folder_2 = '/path2'
+    output_folder = './fusion'
 
-    fused_dir = 'CTMRI'
-    os.makedirs(fused_dir, mode=0o777, exist_ok=True)
-    print('| Testing %s on GPU #%d with pytorch' % (args.model_name, args.gpu))
-    main()
+    fusion(input_folder_2, input_folder_1, output_folder)
