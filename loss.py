@@ -52,5 +52,8 @@ class Fusionloss(nn.Module):
         generate_img_grad=self.sobelconv(generate_img)
         x_grad_joint=torch.max(y_grad,ir_grad)
         loss_grad=F.l1_loss(x_grad_joint,generate_img_grad)
-        loss_total=(1*ssim_value)+(100*loss_in)+(10*loss_grad)
+        loss_total=(10*ssim_value)+(10*loss_in)+(1*loss_grad)
         return loss_total, loss_in, ssim_value, loss_grad
+
+#CT-MRI loss_in:10 loss_ssim:10,loss_grad:1
+
