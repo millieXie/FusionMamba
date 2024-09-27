@@ -39,7 +39,9 @@ dataset
 
 ## 3. Pretrain Weights
 
- It ready before September 25th
+This file is an infrared and visible light model file. Its training hyperparameters have been written so you can use them as you wish. 
+link：https://pan.baidu.com/s/1wHqLA3R2ovZyEfTC00wwsg?pwd=6yr2 
+password：6yr2
  
  ## 4.Train
  
@@ -52,13 +54,7 @@ python train.py
 python test.py
 ```
 
-## 6.Model.pth
-This file is an infrared and visible light model file. Its training hyperparameters have been written so you can use them as you wish. 
-link：https://pan.baidu.com/s/1wHqLA3R2ovZyEfTC00wwsg?pwd=6yr2 
-password：6yr2
-
-
-## 7.Citation
+## 6.Citation
 
 @article{xie2024fusionmamba,
   title={Fusionmamba: Dynamic feature enhancement for multimodal image fusion with mamba},
