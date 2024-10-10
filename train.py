@@ -170,7 +170,7 @@ def train_fusion(num=0, logger=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train with pytorch')
-    parser.add_argument('--model_name', '-M', type=str, default='MyFusion')
+    parser.add_argument('--model_name', '-M', type=str, default='VSSM_Fusion')
     parser.add_argument('--batch_size', '-B', type=int, default=1)
     parser.add_argument('--gpu', '-G', type=int, default=0)
     parser.add_argument('--num_workers', '-j', type=int, default=1)
