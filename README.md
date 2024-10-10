@@ -54,9 +54,12 @@ python train.py
 python test.py
 ```
 ## 6.Datasets
-KAIST:(https://github.com/millieXie/FusionMamba)](https://github.com/SoonminHwang/rgbt-ped-detection)
+KAIST:(https://github.com/SoonminHwang/rgbt-ped-detection)
+
 Link：https://pan.baidu.com/s/1xIlpL21EA7PdFC5PpLviow?pwd=gf0u 
 password：gf0u
+
+
 
 ## 7.Citation
 
