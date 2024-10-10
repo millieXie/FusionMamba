@@ -103,13 +103,13 @@ def train_fusion(num=0, logger=None):
         lr_this_epo = lr_start * lr_decay ** (epo - 1)
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr_this_epo
-        for it, (image_vis, image_ir, name) in enumerate(train_loader):
+        for it, (image_vis, image_ir) in enumerate(train_loader):
             try:
                 fusionmodel.train()
                 image_vis = Variable(image_vis).cuda()
-                image_vis_ycrcb = image_vis[:,0:1:,:,:]
+                # image_vis_ycrcb = image_vis[:,0:1:,:,:]
                 image_ir = Variable(image_ir).cuda()
-                fusion_image = fusionmodel(image_vis_ycrcb, image_ir)
+                fusion_image = fusionmodel(image_vis, image_ir)
 
             except TypeError as e:
                 print(f"Caught TypeError: {e}")
@@ -124,7 +124,7 @@ def train_fusion(num=0, logger=None):
 
             # fusion loss
             loss_fusion,  loss_in, ssim_loss, loss_grad= criteria_fusion(
-                image_vis=image_vis_ycrcb, image_ir=image_ir, generate_img=
+                image_vis=image_vis, image_ir=image_ir, generate_img=
                 fusion_image, i=num, labels=None
             )
 
