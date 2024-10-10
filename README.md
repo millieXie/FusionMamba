@@ -58,6 +58,11 @@ KAIST:(https://github.com/SoonminHwang/rgbt-ped-detection)
 
 Link：https://pan.baidu.com/s/1xIlpL21EA7PdFC5PpLviow?pwd=gf0u 
 password：gf0u
+medical image fusion data:
+This dataset is sourced from the Harvard Public Medical Imaging Collection, consisting of paired CT and MRI images. You may download the original data individually by visiting the official website of the Harvard Public Medical Imaging Database. To facilitate research, we have gathered and processed these paired datasets, which are provided solely for academic research purposes. If you find our processed dataset and this study helpful to your work, we kindly ask that you cite the FusionMamba project in your research. Thank you for your understanding and support.
+
+link：https://pan.baidu.com/s/1HyZ48gQtWZNkUZzfoOJYjw?pwd=bbc7 
+password：bbc7
 
 
 
