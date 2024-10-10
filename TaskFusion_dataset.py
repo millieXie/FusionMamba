@@ -42,10 +42,10 @@ class Fusion_dataset(Dataset):
         self.filenames_ir = []
         self.filepath_vis = []
         self.filenames_vis = []
-        self.length = length
+        self.length = length  # This place can be set up as much as you want to train
         if split == 'train':
-            data_dir_vis = "/KAIST/"
-            data_dir_ir = "/KAIST/"
+            data_dir_vis = "/KAIST/"  # the path of your data
+            data_dir_ir = "/KAIST/"  # the path of your data
             dirs = [d for d in os.listdir(data_dir_ir) if not d.startswith('.')]
             dirs.sort()
             for dir0 in dirs:
@@ -62,7 +62,7 @@ class Fusion_dataset(Dataset):
                         self.filepath_vis.append(filepath_vis_)
                         self.filenames_vis.append(file)
             self.split = split
-            self.length = len(self.filepath_ir)
+            # self.length = len(self.filepath_ir)  #if you want to train all data in the dataset
         elif split == 'test':
             data_dir_vis = vi_path
             data_dir_ir = ir_path
@@ -85,7 +85,8 @@ class Fusion_dataset(Dataset):
             if image_ir is None:
                 raise ValueError(f"Failed to load image at {ir_path}")
 
-            image_ir, image_vis = self.resize(image_ir, image_vis, [256, 256], [256, 256])
+            image_ir, image_vis = self.resize(image_ir, image_vis, [256, 256], [256, 256])  
+
 
             image_vis = np.asarray(Image.fromarray(image_vis), dtype=np.float32) / 255.0
             image_vis = np.expand_dims(image_vis, axis=0)
