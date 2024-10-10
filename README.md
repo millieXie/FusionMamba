@@ -42,6 +42,7 @@ IRVIS:
 This file is an infrared and visible light model file. Its training hyperparameters have been written so you can use them as you wish. 
 link：https://pan.baidu.com/s/1wHqLA3R2ovZyEfTC00wwsg?pwd=6yr2 
 password：6yr2
+
 CT-MRI:
 link：https://pan.baidu.com/s/1lPgbcu8RVaB4BxVAmkGeBQ?pwd=9uea 
 password：9uea
