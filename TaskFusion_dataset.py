@@ -81,7 +81,7 @@ class Fusion_dataset(Dataset):
             #     raise ValueError(f"Failed to load image at {vis_path}")
             # image_vis = cv2.cvtColor(image_vis, cv2.COLOR_BGR2GRAY)
 
-            image_ir = cv2.imread(ir_path)
+            image_ir = cv2.imread(ir_path,0)
             if image_ir is None:
                 raise ValueError(f"Failed to load image at {ir_path}")
 
