@@ -69,10 +69,24 @@ password：gf0u
 
 medical image fusion data:
 
-This dataset is sourced from the Harvard Public Medical Imaging Collection (https://www.med.harvard.edu/aanlib/home.html), consisting of paired CT and MRI images. You may download the original data individually by visiting the official website of the Harvard Public Medical Imaging Database. To facilitate research, we have gathered and processed these paired datasets, which are provided solely for academic research purposes. If you find our processed dataset and this study helpful to your work, we kindly ask that you cite the FusionMamba project in your research. Thank you for your understanding and support.
+This dataset is sourced from the Harvard Public Medical Imaging Collection (https://www.med.harvard.edu/aanlib/home.html), consisting of paired medical images. You may download the original data individually by visiting the official website of the Harvard Public Medical Imaging Database. To facilitate research, we have gathered and processed these paired datasets, which are provided solely for academic research purposes. If you find our processed dataset and this study helpful to your work, we kindly ask that you cite the FusionMamba project in your research. Thank you for your understanding and support.
+
+CT-MRI:
 
 link：https://pan.baidu.com/s/1HyZ48gQtWZNkUZzfoOJYjw?pwd=bbc7 
 password：bbc7
+
+PET-MRI:
+
+link：https://pan.baidu.com/s/1Cs5fUy4EoI-MtX9DUPRFGA?pwd=blt4 
+password：blt4
+
+SPECT-MRI:
+
+link：https://pan.baidu.com/s/1EwxfJ7F0SSD157fxdr4XPw?pwd=3mw7 
+password：3mw7
+
+
 
 ## 7.Path
 You need to modify the data input path in lines 47-48 of the TaskFusion_dataset.py file. If you intend to train using CT-MRI data, ensure that the structure of the CT-MRI data, after data augmentation, matches the structure of the KAIST dataset. Additionally, replace lwir with CT and visible with MRI.
