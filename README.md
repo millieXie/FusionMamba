@@ -89,7 +89,7 @@ password：3mw7
 
 
 ## 7.Path
-You need to modify the data input path in lines 47-48 of the TaskFusion_dataset.py file. If you intend to train using CT-MRI data, ensure that the structure of the CT-MRI data, after data augmentation, matches the structure of the KAIST dataset. Additionally, replace lwir with CT and visible with MRI.
+You need to modify the data input path in lines 47-48 of the TaskFusion_dataset.py file. If you intend to train using CT-MRI data, ensure that the structure of the CT-MRI data, after data augmentation, matches the structure of the KAIST dataset. Additionally, replace lwir with CT/PET/SPECT and visible with MRI.
 
 
 ## 8.Citation
