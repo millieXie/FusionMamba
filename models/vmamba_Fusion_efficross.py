@@ -1,6 +1,7 @@
+import time
 import math
 from functools import partial
-from typing import Callable
+from typing import Optional, Callable
 
 import numpy as np
 import torch
@@ -8,8 +9,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
 from einops import rearrange, repeat
-from timm.models.layers import DropPath, trunc_normal_
+from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 
+from mamba_ssm.ops.selective_scan_interface import selective_scan_fn, selective_scan_ref
 from models.cross import VSSBlock_Cross_new
 from models.cross import VSSBlock_new
 
@@ -17,6 +19,7 @@ try:
     from mamba_ssm.ops.selective_scan_interface import selective_scan_fn, selective_scan_ref
 except:
     pass
+
 
 try:
     from selective_scan import selective_scan_fn as selective_scan_fn_v1
@@ -484,48 +487,6 @@ class SS2D(nn.Module):
             out = self.dropout(out)
         return out
 
-class ConvLeakyRelu2d(nn.Module):
-    # convolution
-    # leaky relu
-    def __init__(self, in_channels, out_channels, kernel_size=3, padding=1, stride=1, dilation=1, groups=1):
-        super(ConvLeakyRelu2d, self).__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, padding=padding, stride=stride,
-                              dilation=dilation, groups=groups)
-        # self.bn   = nn.BatchNorm2d(out_channels)
-
-    def forward(self, x):
-        # print(x.size())
-        return F.leaky_relu(self.conv(x), negative_slope=0.2)
-
-
-class Conv1(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=1, padding=0, stride=1, dilation=1, groups=1):
-        super(Conv1, self).__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, padding=padding, stride=stride,
-                              dilation=dilation, groups=groups)
-
-    def forward(self, x):
-        return self.conv(x)
-
-
-class Sobelxy(nn.Module):
-    def __init__(self, channels, kernel_size=3, padding=1, stride=1, dilation=1, groups=1):
-        super(Sobelxy, self).__init__()
-        sobel_filter = np.array([[1, 0, -1],
-                                 [2, 0, -2],
-                                 [1, 0, -1]])
-        self.convx = nn.Conv2d(channels, channels, kernel_size=kernel_size, padding=padding, stride=stride,
-                               dilation=dilation, groups=channels, bias=False)
-        self.convx.weight.data.copy_(torch.from_numpy(sobel_filter))
-        self.convy = nn.Conv2d(channels, channels, kernel_size=kernel_size, padding=padding, stride=stride,
-                               dilation=dilation, groups=channels, bias=False)
-        self.convy.weight.data.copy_(torch.from_numpy(sobel_filter.T))
-
-    def forward(self, x):
-        sobelx = self.convx(x)
-        sobely = self.convy(x)
-        x = torch.abs(sobelx) + torch.abs(sobely)
-        return x
 
 
 class Conv2d_Hori_Veri_Cross(nn.Module):
@@ -614,6 +575,7 @@ class Conv2d_CDC(nn.Module):
         )
 
         self.lastconv3 = nn.Sequential(
+            # basic_conv1(64, 1, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0, bias=False),
             nn.ReLU(),
         )
@@ -654,34 +616,21 @@ class LDC(nn.Module):
                             groups=self.conv.groups)
         return out_diff
 
-class VSSBlock(nn.Module):
-    def __init__(
-            self,
-            hidden_dim: int = 0,
-            drop_path: float = 0,
-            norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
-            attn_drop_rate: float = 0,
-            d_state: int = 16,
-            **kwargs,
-    ):
-        super().__init__()
-        self.ln_1 = norm_layer(hidden_dim)
-        self.self_attention = SS2D(d_model=hidden_dim, dropout=attn_drop_rate, d_state=d_state, **kwargs)
-        self.drop_path = DropPath(drop_path)
-        self.CDC_block = LDC(hidden_dim, hidden_dim)
-
-    def forward(self, input: torch.Tensor):
-        x_ = input.permute(0, 3, 1, 2)  # (1,64,64,96)
-
-        Grad_x = (self.CDC_block(x_)).permute(0, 2, 3, 1)
-
-        x = input + self.drop_path(self.self_attention(self.ln_1(input))) + Grad_x
-        return x
 
 
 
 class VSSLayer(nn.Module):
-
+    """ A basic Swin Transformer layer for one stage.
+    Args:
+        dim (int): Number of input channels.
+        depth (int): Number of blocks.
+        drop (float, optional): Dropout rate. Default: 0.0
+        attn_drop (float, optional): Attention dropout rate. Default: 0.0
+        drop_path (float | tuple[float], optional): Stochastic depth rate. Default: 0.0
+        norm_layer (nn.Module, optional): Normalization layer. Default: nn.LayerNorm
+        downsample (nn.Module | None, optional): Downsample layer at the end of the layer. Default: None
+        use_checkpoint (bool): Whether to use checkpointing to save memory. Default: False.
+    """
 
     def __init__(
             self,
@@ -737,6 +686,17 @@ class VSSLayer(nn.Module):
 
 
 class VSSLayer_up(nn.Module):
+    """ A basic Swin Transformer layer for one stage.
+    Args:
+        dim (int): Number of input channels.
+        depth (int): Number of blocks.
+        drop (float, optional): Dropout rate. Default: 0.0
+        attn_drop (float, optional): Attention dropout rate. Default: 0.0
+        drop_path (float | tuple[float], optional): Stochastic depth rate. Default: 0.0
+        norm_layer (nn.Module, optional): Normalization layer. Default: nn.LayerNorm
+        downsample (nn.Module | None, optional): Downsample layer at the end of the layer. Default: None
+        use_checkpoint (bool): Whether to use checkpointing to save memory. Default: False.
+    """
 
     def __init__(
             self,
@@ -812,6 +772,8 @@ class VSSM_Fusion(nn.Module):
 
         # WASTED absolute position embedding ======================
         self.ape = False
+        # self.ape = False
+        # drop_rate = 0.0
         if self.ape:
             self.patches_resolution = self.patch_embed.patches_resolution
             self.absolute_pos_embed1 = nn.Parameter(torch.zeros(1, *self.patches_resolution, self.embed_dim))
@@ -865,9 +827,21 @@ class VSSM_Fusion(nn.Module):
             )
             self.Cross_block.append(clayer)
 
+        # self.norm = norm_layer(self.num_features)
+        # self.avgpool = nn.AdaptiveAvgPool1d(1)
+        # self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
+
         self.apply(self._init_weights)
 
     def _init_weights(self, m: nn.Module):
+        """
+        out_proj.weight which is previously initilized in VSSBlock, would be cleared in nn.Linear
+        no fc.weight found in the any of the model parameters
+        no nn.Embedding found in the any of the model parameters
+        so the thing is, VSSBlock initialization is useless
+
+        Conv2D is not intialized !!!
+        """
         if isinstance(m, nn.Linear):
             trunc_normal_(m.weight, std=.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
@@ -950,21 +924,21 @@ class VSSM_Fusion(nn.Module):
         skip_list = self.Fusion_network(skip_list1,skip_list2)
 
         x = self.forward_features_up(x, skip_list)
-        x = self.forward_final(x) + x_1 + x_2
+        x = self.forward_final(x) + x_1 + x_2 +x_1+x_2
 
         return x
 
 
-if __name__ == "__main__":
-    net = VSSM_Fusion(patch_size=4, in_chans=1, num_classes=1000, depths=[2, 2, 9, 2], depths_decoder=[2, 9, 2, 2],
-                      dims=[96, 192, 384, 768], dims_decoder=[768, 384, 192, 96], d_state=16, drop_rate=0.,
-                      attn_drop_rate=0., drop_path_rate=0.1,
-                      norm_layer=nn.LayerNorm, patch_norm=True,
-                      use_checkpoint=False).cuda()
-    x1 = torch.rand((4, 1, 256, 256)).cuda()
-    x2 = torch.rand((4, 1, 256, 256)).cuda()
-    a = net(x1, x2).cuda()
-    print(a.shape)
+# if __name__ == "__main__":
+#     net = VSSM_Fusion(patch_size=4, in_chans=1, num_classes=1000, depths=[2, 2, 9, 2], depths_decoder=[2, 9, 2, 2],
+#                       dims=[96, 192, 384, 768], dims_decoder=[768, 384, 192, 96], d_state=16, drop_rate=0.,
+#                       attn_drop_rate=0., drop_path_rate=0.1,
+#                       norm_layer=nn.LayerNorm, patch_norm=True,
+#                       use_checkpoint=False).cuda()
+#     x1 = torch.rand((4, 1, 256, 256)).cuda()
+#     x2 = torch.rand((4, 1, 256, 256)).cuda()
+#     a = net(x1, x2).cuda()
+#     print(a.shape)
 
 
 
