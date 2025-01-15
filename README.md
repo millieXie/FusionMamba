@@ -96,7 +96,11 @@ You need to modify the data input path in lines 47-48 of the TaskFusion_dataset.
 
 @article{xie2024fusionmamba,
   title={Fusionmamba: Dynamic feature enhancement for multimodal image fusion with mamba},
-  author={Xie, Xinyu and Cui, Yawen and Ieong, Chio-In and Tan, Tao and Zhang, Xiaozhi and Zheng, Xubin and Yu, Zitong},
-  journal={arXiv preprint arXiv:2404.09498},
-  year={2024}
+  author={Xie, Xinyu and Cui, Yawen and Tan, Tao and Zheng, Xubin and Yu, Zitong},
+  journal={Visual Intelligence},
+  volume={2},
+  number={1},
+  pages={37},
+  year={2024},
+  publisher={Springer}
 }
