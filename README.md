@@ -47,6 +47,11 @@ CT-MRI:
 link：https://pan.baidu.com/s/1lrEiVLs2p8cMyCV-GN_ZKQ?pwd=a3v8 
 password：a3v8
 
+PET-MRI:
+
+It will be updated later
+
+
 (CT-MRI-tinymodel) Note: You need to modify line 794 in the file `FusionMamba/models/vmamba_Fusion_efficross.py` by changing `{depths=[2, 2, 9, 2], depths_decoder=[2, 9, 2, 2]}` to `{depths=[2, 2, 1, 2], depths_decoder=[2, 1, 2, 2]}`.
 
 
