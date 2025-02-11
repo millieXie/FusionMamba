@@ -81,7 +81,12 @@ def fusion(input_folder_ir, input_folder_vis, output_folder):
         model.eval()
         with torch.no_grad():
             out = model(img1_tensor, img2_tensor)
-            out = torch.clamp(out, 0, 1)  
+            # out = torch.clamp(out, 0, 1)  
+            ones = torch.ones_like(out)
+            zeros = torch.zeros_like(out)
+            out = torch.where(out > ones, ones, out)
+            out = torch.where(out < zeros, zeros, out)
+            
             
             out_np = out.cpu().numpy()
             
